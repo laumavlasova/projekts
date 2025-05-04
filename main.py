@@ -58,5 +58,29 @@ def ietaupi_naudu():
     else:
          print("\nVisi ienākumi ir sadalīti pa kategorijām!")
 
+     while True:
+          print("\n Vai vēlies reģistrēt izdevumus?(jā/nē)")
+          izvele = input (">> ").strip().lower()
+          if izvele != "jā":
+               print("Uz tikšanos!")
+               break
+     print("\nPieejamās kategorijas: ")
+     for i, kat in enumerate(kategorijas):
+          print(f"{i+1}. {kat} (atlikums:{atlikumi[i]:.2f}€)")
+     try:
+          izveleta_index = int(input("Ievadi kategorijas numuru: ")) - 1
+          iztērēts = float (input(f"Ievadi, cik esi iztēŗējis kategorijā' {kategorijas[izveleta_index]}':"))
+          if iztērēts < 0:
+               print("Tēriņš nevar būt negatīvs.")
+               continue
+          if iztērēts > atlikumi[izveleta_index]:
+               print(f"Ievadītā summa pārsniedz atlikumu({atlikumi[izveleta_index]:.2f}€)! Ievadi mazāku summu.")
+               continue
+          atlikumi[izveleta_index]=round(atlikumi[izveleta_index] - iztērēts, 2)
+          print(f"Atjaunots atlikums: {atlikumi[izveleta_index]:.2f}€ kategorijā '{kategorijas[izveleta_index]}'")
+
+     except ValueError:
+          print("Lūdzu ievadi derīgus skaitļus!")
+          
 if __name__ == "__main__":
        ietaupi_naudu() 
