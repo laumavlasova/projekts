@@ -90,44 +90,43 @@ def ietaupi_naudu():
             print("Uz tikšanos!")
             break
 
-        print("\nPieejamās kategorijas: ")
+        print("\nIevadi savus šī mēneša izdevumus: ")
         for i, kat in enumerate(kategorijas):
-            print(f"{i+1}. {kat} (atlikums: {atlikumi[i]:.2f}€)")
+            while True:
+                try:
+                    iztērēts = float(input(f"Ievadi, cik esi iztērējis kategorijā '{kategorijas[i]}': "))
+                    if iztērēts < 0:
+                        print("Tēriņš nevar būt negatīvs.")
+                        continue
+                    jauns_atlikums = atlikumi[i] - iztērēts
+                    if jauns_atlikums < 0:
+                        parsniedz_budzetu = abs(jauns_atlikums);atlikusi_nauda -= parsniedz_budzetu
+                        print(f"Izdevumi pārsniedza kategorijas limitu par {parsniedz_budzetu:.2f}€. Atlikušie kopējie ienākumi: {atlikusi_nauda:.2f}")
+                        atlikumi[i] = 0
+                    else:
+                        atlikumi[i] = jauns_atlikums
+                    print(f"Atjaunots atlikuns: {atlikumi[i]:.2f}€ kategorijā '{kategorijas[i]}'")
 
-        try:
-            izveleta_index = int(input("Ievadi kategorijas numuru: ")) - 1
-            iztērēts = float(input(f"Ievadi, cik esi iztērējis kategorijā '{kategorijas[izveleta_index]}': "))
-            if iztērēts < 0:
-                print("Tēriņš nevar būt negatīvs.")
-                continue
-            jauns_atlikums = atlikumi[izveleta_index] - iztērēts
-            if jauns_atlikums < 0:
-                parsniedz_budzetu = abs(jauns_atlikums);atlikusi_nauda -= parsniedz_budzetu
-                print(f"Izdevumi pārsniedza kategorijas limitu par {parsniedz_budzetu:.2f}€. Atlikušie kopējie ienākumi: {atlikusi_nauda:.2f}")
-                atlikumi[izveleta_index] = 0
-            else:
-                atlikumi[izveleta_index] = jauns_atlikums
-            print(f"Atjaunots atlikuns: {atlikumi[izveleta_index]:.2f}€ kategorijā '{kategorijas[izveleta_index]}'")
+                    jauns_ieraksts = pd.DataFrame([{
+                        "Datums": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Kategorija": kategorijas[i],
+                        "Izdevums": iztērēts
+                    }])
+                    izdevumi_df = pd.concat([izdevumi_df, jauns_ieraksts], ignore_index=True)
 
-            jauns_ieraksts = pd.DataFrame([{
-                "Datums": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Kategorija": kategorijas[izveleta_index],
-                "Izdevums": iztērēts
-            }])
-            izdevumi_df = pd.concat([izdevumi_df, jauns_ieraksts], ignore_index=True)
+                    wb = load_workbook(budzeta_fails)
+                    if "Izdevumi" in wb.sheetnames:
+                        del wb["Izdevumi"]
+                    wb.save(budzeta_fails)
+                    wb.close()
 
-            wb = load_workbook(budzeta_fails)
-            if "Izdevumi" in wb.sheetnames:
-                del wb["Izdevumi"]
-            wb.save(budzeta_fails)
-            wb.close()
+                    with pd.ExcelWriter(budzeta_fails, engine="openpyxl", mode="a") as writer:
+                        izdevumi_df.to_excel(writer, sheet_name="Izdevumi", index=False)
 
-            with pd.ExcelWriter(budzeta_fails, engine="openpyxl", mode="a") as writer:
-                izdevumi_df.to_excel(writer, sheet_name="Izdevumi", index=False)
+                    break
+                except ValueError:
+                    print("Lūdzu ievadi derīgus skaitļus!")
 
-            print("Tēriņš veiksmīgi pievienots")
-
-        except ValueError:
-            print("Lūdzu ievadi derīgus skaitļus!")
+            print("Visi izdevumi veiksmīgi pievienoti!")
 if __name__ == "__main__":
     ietaupi_naudu()
