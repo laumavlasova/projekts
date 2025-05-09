@@ -5,7 +5,7 @@ from openpyxl import load_workbook
 
 def ietaupi_naudu():
     print("Vēlies ietaupīt naudu? SĀKAM!")
-    ienakumi = float(input("Ievadi savus mēneša ienākumus(€):"))
+    ienakumi = float(input("Ievadi budžetu šim mēnesim(€):"))
     atlikusi_nauda = ienakumi  # Lai sekotu, cik naudas paliek
     kategorijas = [
         "pārtika",
@@ -100,11 +100,14 @@ def ietaupi_naudu():
             if iztērēts < 0:
                 print("Tēriņš nevar būt negatīvs.")
                 continue
-            if iztērēts > atlikumi[izveleta_index]:
-                print(f"Ievadītā summa pārsniedz atlikumu ({atlikumi[izveleta_index]:.2f}€)! Ievadi mazāku summu.")
-                continue
-            atlikumi[izveleta_index] = round(atlikumi[izveleta_index] - iztērēts, 2)
-            print(f"Atjaunots atlikums: {atlikumi[izveleta_index]:.2f}€ kategorijā '{kategorijas[izveleta_index]}'")
+            jauns_atlikums = atlikumi[izveleta_index] - iztērēts
+            if jauns_atlikums < 0:
+                parsniedz_budzetu = abs(jauns_atlikums);atlikusi_nauda -= parsniedz_budzetu
+                print(f"Izdevumi pārsniedza kategorijas limitu par {parsniedz_budzetu:.2f}€. Atlikušie kopējie ienākumi: {atlikusi_nauda:.2f}")
+                atlikumi[izveleta_index] = 0
+            else:
+                atlikumi[izveleta_index] = jauns_atlikums
+            print(f"Atjaunots atlikuns: {atlikumi[izveleta_index]:.2f}€ kategorijā '{kategorijas[izveleta_index]}'")
 
             jauns_ieraksts = pd.DataFrame([{
                 "Datums": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
