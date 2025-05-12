@@ -3,11 +3,16 @@ from datetime import datetime
 import os
 from openpyxl import load_workbook
 
+def izvelne(): 
+    print("\nIzvēlies darbību:")
+    print("1. Izveidot budžetu")
+    print("2. Pievienot izdevumu")
+    print("3. Pabeigt visas darbības")
+    return input (">> ").strip()
+
+
 def ietaupi_naudu():
-    print("Vēlies ietaupīt naudu? SĀKAM!")
-    ienakumi = float(input("Ievadi budžetu šim mēnesim(€):"))
-    atlikusi_nauda = ienakumi  # Lai sekotu, cik naudas paliek
-    kategorijas = [
+    visas_kategorijas = [
         "pārtika",
         "ēšana ārpus mājas (restorāni/fast food/kafejnīcas)",
         "mājas izdevumi (komunālie + īre / nekustamā īpašuma nodoklis)",
@@ -21,112 +26,106 @@ def ietaupi_naudu():
         "abonementi",
         "dāvanas"
     ]
+    budzeta_fails = "budzeta_limitu_kopsavilkums.xlsx"
     limiti = []
     atlikumi = []
-    print("\nIevadi savus mēneša limitus (€):")
+    izdevumi_df = pd.DataFrame(columns= ["Datums", "Kategorija" "Izdevums"])
+    kopējie_izdevumi = 0
+    sākotnējais_budžets = 0
 
-    neparsniegts = False
-    for kategorija in kategorijas:
-        if atlikusi_nauda == 0:
-            if not neparsniegts:
-                print(f"Esi pārsniedzis budzetu. Atlikušajam limitam tiek piešķirts 0€")
-                neparsniegts = True
-            limiti.append(0)
-            atlikumi.append(0)
-            continue
-
-        while True:
-            try:
-                limits = float(input(f"{kategorija} (Tev atlikuši {atlikusi_nauda:.2f}€): "))
-                if limits < 0:
-                    print("Limits nevar būt negatīvs.  Ievadi no jauna.")
-                elif round(limits, 2) > round(atlikusi_nauda, 2):
-                    print(f"Limits {limits:.2f}€ pārsniedz atlikušos ienākumus! Ievadi mazāku summu!")
-                else:
-                    limiti.append(limits)
-                    atlikumi.append(limits)
-                    atlikusi_nauda = round(atlikusi_nauda - limits, 2)
-                    break
-            except ValueError:
-                print("Lūdzu ievadi skaitli!")
-
-    budzeta_fails = "budzeta_limitu_kopsavilkums.xlsx"
-    limitu_dati = pd.DataFrame({
-        'Kategorija': kategorijas,
-        'Mēneša limits': limiti,
-        'Atlikums': atlikumi
-    })
-
-    with pd.ExcelWriter(budzeta_fails, engine="openpyxl", mode="w") as writer:
-        limitu_dati.to_excel(writer, sheet_name="Limiti", index=False)
-
-    print(f"\n Tavi limiti ir saglabāti! Tos vari atrast : {budzeta_fails}")
-
-    if atlikusi_nauda > 0:
-        print(f"\nPēc budžeta sastādīšanas Tev vēl paliek brīvi {atlikusi_nauda:.2f}€")
-    else:
-        print("\nVisi ienākumi ir sadalīti pa kategorijām!")
-    try:
-        wb = load_workbook(budzeta_fails)
-        if "Izdevumi" in wb.sheetnames:
-            izdevumi_df = pd.read_excel(budzeta_fails, sheet_name="Izdevumi")
-        else:
-            izdevumi_df = pd.DataFrame({
-                "Datums": pd.Series(dtype='str'),
-                "Kategorija": pd.Series(dtype='str'),
-                "Izdevums": pd.Series(dtype='float')
-            })
-    except:
-        izdevumi_df = pd.DataFrame({
-            "Datums": pd.Series(dtype='str'),
-            "Kategorija": pd.Series(dtype='str'),
-            "Izdevums": pd.Series(dtype='float')
-        })
-        
     while True:
-        print("\n Vai vēlies reģistrēt izdevumus?(jā/nē)")
-        izvele = input(">> ").strip().lower()
-        if izvele != "jā":
-            print("Uz tikšanos!")
-            break
+        opcija = izvelne()
 
-        print("\nIevadi savus šī mēneša izdevumus: ")
-        for i, kat in enumerate(kategorijas):
-            while True:
-                try:
-                    iztērēts = float(input(f"Ievadi, cik esi iztērējis kategorijā '{kategorijas[i]}': "))
+        if opcija == "1":
+            print("Vēlies ietaupīt naudu? Sākam!")
+            sākotnējais_budžets = float(input("Ievadi šī mēneša budžetu (EUR): "))
+            atlikusi_nauda = sākotnējais_budžets
+
+            print("\nIevadi savus mēneša limitus katrā kategorijā (EUR): ")
+            for kategorija in visas_kategorijas:
+                while True:
+                    try:
+                        limits = float(input(f"{kategorija} (Tev atlikuši {atlikusi_nauda:.2f}€): "))
+                        if limits < 0:
+                            print("Limits nevar būt negatīvs.  Ievadi no jauna.")
+                        elif round(limits, 2) > round(atlikusi_nauda, 2):
+                            print(f"Limits {limits:.2f}€ pārsniedz atlikušos ienākumus! Ievadi mazāku summu!")
+                        else:
+                            limiti.append(limits)
+                            atlikumi.append(limits)
+                            atlikusi_nauda = round(atlikusi_nauda - limits, 2)
+                            break
+                    except ValueError:
+                        print("Lūdzu ievadi skaitli!")
+
+            limitu_dati = pd.DataFrame({
+                'Kategorija': visas_kategorijas,
+                'Mēneša limits': limiti,
+                'Atlikums': atlikumi
+            })
+            with pd.ExcelWriter(budzeta_fails, engine="openpyxl", mode="w") as writer:
+                limitu_dati.to_excel(writer, sheet_name="Limiti", index=False)
+                izdevumi_df.to_excel(writer, sheet_name="Izdevumi", index=False)
+            print(f"\n Tavi limiti ir saglabāti! Tos vari atrast : {budzeta_fails}")
+
+        elif opcija == "2":
+            try:
+                limitu_dati = pd.read_excel(budzeta_fails, sheet_name="Limiti")
+                izdevumi_df = pd.read_excel(budzeta_fails, sheet_name="Izdevumi")
+            except FileNotFoundError:
+                print("!!Bužeta fails netika atrasts. Vispirms norādi savu budžetu!!")
+                continue
+
+            print("\nIzvēlies kategoriju:")
+            for i, kat in enumerate(visas_kategorijas, 1):
+                print(f"{i}. {kat}")
+
+            try:
+                kat_izvele = int(input("Izvēlies kategorijas numuru: ").strip()) - 1
+                if 0 <= kat_izvele < len(visas_kategorijas):
+                    iztērēts = float(input(f"Ievadi savus izdevumus kategorijā '{visas_kategorijas[kat_izvele]}': ").strip())
                     if iztērēts < 0:
-                        print("Tēriņš nevar būt negatīvs.")
+                        print("Izdevumi nevar būt negatīvi!")
                         continue
-                    jauns_atlikums = atlikumi[i] - iztērēts
-                    if jauns_atlikums < 0:
-                        parsniedz_budzetu = abs(jauns_atlikums);atlikusi_nauda -= parsniedz_budzetu
-                        print(f"Izdevumi pārsniedza kategorijas limitu par {parsniedz_budzetu:.2f}€. Atlikušie kopējie ienākumi: {atlikusi_nauda:.2f}")
-                        atlikumi[i] = 0
-                    else:
-                        atlikumi[i] = jauns_atlikums
-                    print(f"Atjaunots atlikuns: {atlikumi[i]:.2f}€ kategorijā '{kategorijas[i]}'")
+                   
+                    kopējie_izdevumi += iztērēts
+                    atlikumi[kat_izvele] -= iztērēts
+                    if atlikumi[kat_izvele] < 0:
+                        parsniegums = abs(atlikumi[kat_izvele])
+                        print(f"! Izdevumi pārsniedz kategorijas limitu par {atlikumi[kat_izvele]:.2f} EUR!")
+                        atlikumi[kat_izvele] = 0 
+                        
+                    print(f"Atjaunotais atlikums: {atlikumi[kat_izvele]:.2f} EUR kategorijā '{visas_kategorijas[kat_izvele]}'")
 
                     jauns_ieraksts = pd.DataFrame([{
                         "Datums": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "Kategorija": kategorijas[i],
+                        "Kategorija": visas_kategorijas[kat_izvele],
                         "Izdevums": iztērēts
                     }])
                     izdevumi_df = pd.concat([izdevumi_df, jauns_ieraksts], ignore_index=True)
 
-                    wb = load_workbook(budzeta_fails)
-                    if "Izdevumi" in wb.sheetnames:
-                        del wb["Izdevumi"]
-                    wb.save(budzeta_fails)
-                    wb.close()
-
                     with pd.ExcelWriter(budzeta_fails, engine="openpyxl", mode="a") as writer:
+                        limitu_dati["Atlikums"] = atlikumi
+                        limitu_dati.to_excel(writer, sheet_name="Limiti", index=False)
                         izdevumi_df.to_excel(writer, sheet_name="Izdevumi", index=False)
-
-                    break
-                except ValueError:
-                    print("Lūdzu ievadi derīgus skaitļus!")
-
-            print("Visi izdevumi veiksmīgi pievienoti!")
+                    print("Izdevumi ir veiksmīgi saglabāti! :) ")
+                else:
+                    print("Nederīgs kategorijas numurs!")
+            except ValueError:
+                print("Nederīgs ievades formāts!")
+                
+        elif opcija == "3":
+            atlikusais_budzets = sum(atlikumi)
+            print("Uz tikšanos!")
+            print(f"\nSākotnējais budžets: {sākotnējais_budžets:.2f} EUR")
+            print(f"\nSKopējie izdevumi: {kopējie_izdevumi:.2f} EUR")
+            if kopējie_izdevumi > sākotnējais_budžets:
+                print(f"Tu pārsniedzi savu mēneša budžetu par {kopējie_izdevumi - sākotnējais_budžets:.2f} EUR")
+            else:
+                print(f"Tu šomēnes esi ietaupījis {sākotnējais_budžets - kopējie_izdevumi:.2f} EUR")
+            break
+        else:
+            print("Nederīga izvēle! Lūdzu izvēlies starp 1, 2 vai 3!")
+    
 if __name__ == "__main__":
     ietaupi_naudu()
