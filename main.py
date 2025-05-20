@@ -110,6 +110,7 @@ def ietaupi_naudu():
             try:
                 limitu_dati = pd.read_excel(budzeta_fails, sheet_name="Limiti")
                 izdevumi_df = pd.read_excel(budzeta_fails, sheet_name="Izdevumi")
+                atlikumi = limitu_dati["Atlikums"].tolist()
             except FileNotFoundError:
                 print("!!Bužeta fails netika atrasts. Vispirms norādi savu budžetu!!")
                 continue
@@ -142,7 +143,7 @@ def ietaupi_naudu():
                     }])
                     izdevumi_df = pd.concat([izdevumi_df, jauns_ieraksts], ignore_index=True)
 
-                    with pd.ExcelWriter(budzeta_fails, engine="openpyxl", mode="a") as writer:
+                    with pd.ExcelWriter(budzeta_fails, engine="openpyxl", mode="w") as writer:
                         limitu_dati["Atlikums"] = atlikumi
                         limitu_dati.to_excel(writer, sheet_name="Limiti", index=False)
                         izdevumi_df.to_excel(writer, sheet_name="Izdevumi", index=False)
